@@ -19,8 +19,8 @@ The final estimate should come from the two RGB images, **not** from directly co
               ▼            ▼
           PX4 SITL     ros_gz_bridge
               │            │
-     uXRCE-DDS client       │
-              │            ▼
+     uXRCE-DDS client      |
+              │            |
        Micro XRCE-DDS    ROS 2 left/right
             Agent         image topics
               │            │
