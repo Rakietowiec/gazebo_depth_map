@@ -38,6 +38,10 @@ If WSL was installed already, the first line is unnecessary. Create a Linux user
 lsb_release -a
 ```
 
+If the default Ubuntu distribution was installed first, keep in mind that `Ubuntu` and `Ubuntu-24.04` are separate WSL installations, with different Linux usernames, packages and home directories.
+
+Windows WSL shells sometimes begin in `/mnt/c/Users/USERNAME` rather than Linux `~`; run `cd ~` when installing Linux packages or cloning large Linux software projects.
+
 All subsequent installation commands are **inside Ubuntu**, not PowerShell or the PX4 `pxh>` console.
 
 ## 2. Install PX4 + Gazebo Harmonic
@@ -78,7 +82,16 @@ Do not bypass failed preflight checks.
 
 Official installation guide: https://docs.qgroundcontrol.com/master/en/qgc-user-guide/getting_started/download_and_install.html
 
-Download the **Linux x86_64 AppImage** and put it in your Ubuntu home folder. Then:
+Download the **Linux x86_64 AppImage**. To move it from your Windows Downloads folder into Ubuntu without guessing the Windows username, open the Ubuntu home folder from the Ubuntu terminal:
+
+```bash
+cd ~
+explorer.exe .
+```
+
+A Windows File Explorer window appears showing the Ubuntu home folder. In another File Explorer window, copy the downloaded QGroundControl `.AppImage` from Windows Downloads, then paste it into the Ubuntu folder.
+
+Then:
 
 ```bash
 sudo apt install -y libfuse2t64 libxcb-xinerama0 libxkbcommon-x11-0 libxcb-cursor0
@@ -94,13 +107,30 @@ QGroundControl connected to the X500 simulator and a simulated takeoff and landi
 Follow the current **Ubuntu 24.04/Jazzy deb package repository setup** at:
 https://docs.ros.org/en/jazzy/Installation/Ubuntu-Install-Debs.html
 
-After configuring that repository, install:
+The original environment was prepared with the following repository setup. The official documentation should take precedence if it changes:
 
 ```bash
+sudo apt update
+sudo apt install -y locales curl software-properties-common
+sudo locale-gen en_US en_US.UTF-8
+sudo update-locale LC_ALL=en_US.UTF-8 LANG=en_US.UTF-8
+export LANG=en_US.UTF-8
+sudo add-apt-repository universe -y
+
+export ROS_APT_SOURCE_VERSION=$(curl -s \
+  https://api.github.com/repos/ros-infrastructure/ros-apt-source/releases/latest \
+  | grep -F '"tag_name"' | awk -F'"' '{print $4}')
+
+curl -L -o /tmp/ros2-apt-source.deb \
+  "https://github.com/ros-infrastructure/ros-apt-source/releases/download/${ROS_APT_SOURCE_VERSION}/ros2-apt-source_${ROS_APT_SOURCE_VERSION}.$(. /etc/os-release && echo ${UBUNTU_CODENAME:-${VERSION_CODENAME}})_all.deb"
+
+sudo dpkg -i /tmp/ros2-apt-source.deb
 sudo apt update
 sudo apt install -y ros-jazzy-desktop ros-dev-tools
 source /opt/ros/jazzy/setup.bash
 ```
+
+If the downloaded repository installer fails (for example, its release filename has changed), refer back to the official ROS installation instructions instead of guessing a filename.
 
 Optional: source ROS in future interactive shells by adding this line once to `~/.bashrc`:
 
@@ -187,6 +217,20 @@ ros2 topic echo /fmu/out/vehicle_status_v1 --qos-reliability best_effort
 
 **Verified result:** PX4 synchronised with the agent, the agent established a client session, and ROS 2 continuously printed `VehicleStatus` messages on `/fmu/out/vehicle_status_v1`. Use `Ctrl+C` to stop `ros2 topic echo`.
 
+Successful diagnostic excerpts (abridged; not a complete log):
+
+```text
+INFO [init] Gazebo simulator 8.15.0
+INFO [init] Gazebo world is ready
+INFO [gz_bridge] world: default, model: x500_0
+INFO [px4] Startup script returned successfully
+[agent] session established
+INFO [uxrce_dds_client] synchronized with time offset ...
+INFO [uxrce_dds_client] successfully created rt/fmu/out/vehicle_status_v1 data writer
+```
+
+Example fields in the observed ROS `VehicleStatus` stream included `arming_state: 1`, `failsafe: false`, `gcs_connection_lost: true`, `power_input_valid: true`, and `pre_flight_checks_pass: false`. These are one snapshot, not a statement that preflight was ready for flight at that moment.
+
 ## 9. Launch convenience scripts (after adding the files in this contribution)
 
 Use separate Ubuntu terminals in the cloned project directory:
@@ -224,3 +268,4 @@ Bridge it to ROS 2 and inspect the image before adding a second camera. This tes
 - https://docs.ros.org/en/jazzy/
 - https://github.com/PX4/px4_msgs
 - https://github.com/eProsima/Micro-XRCE-DDS-Agent
+
