@@ -19,6 +19,15 @@ From 32-bit PowerShell, open 64-bit PowerShell:
 & "$env:windir\Sysnative\WindowsPowerShell\v1.0\powershell.exe"
 ```
 
+If the Windows features were disabled, the following commands were successfully used from Administrator PowerShell before rebooting:
+
+```powershell
+dism.exe /online /enable-feature /featurename:Microsoft-Windows-Subsystem-Linux /all /norestart
+dism.exe /online /enable-feature /featurename:VirtualMachinePlatform /all /norestart
+```
+
+Restart Windows after enabling features. In this setup, `wsl.exe` was still not present until the separate WSL installation command was run from **64-bit PowerShell**.
+
 Then install WSL (if necessary):
 
 ```powershell
@@ -36,6 +45,8 @@ wsl -d Ubuntu-24.04
 ```
 
 Each WSL distribution has its own Linux user and packages. A downloaded Ubuntu `.iso` in Windows Downloads is **not** the WSL distribution.
+
+Ubuntu was initially launched from Windows PowerShell and a Unix username/password were created. Because Ubuntu 24.04 was installed as a *separate* distribution, its own Unix account also had to be created.
 
 ## `ros-jazzy-ros-gzharmonic` not found
 
